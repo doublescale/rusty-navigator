@@ -2,6 +2,7 @@ use sdl2::event::Event;
 use sdl2::event::WindowEvent;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
+use sdl2::rect::Rect;
 
 #[derive(Debug)]
 struct AppOptions {
@@ -30,7 +31,7 @@ fn main() -> Result<(), String> {
     let mut event_pump = sdl_context.event_pump()?;
     let video_subsystem = sdl_context.video()?;
     let window = video_subsystem
-        .window("Rusty SDL", 800, 600)
+        .window("Rusty Navigator", 800, 600)
         .resizable()
         .build()
         .map_err(|e| e.to_string())?;
@@ -40,12 +41,16 @@ fn main() -> Result<(), String> {
         .build()
         .map_err(|e| e.to_string())?;
 
-    canvas.set_draw_color(Color::RGB(0, 128, 0));
     let mut render = || {
         if opts.debug {
             println!("Rendering");
         }
+        canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
+        canvas.set_draw_color(Color::RGB(128, 128, 128));
+        canvas
+            .fill_rect(Rect::new(10, 20, 30, 40))
+            .expect("Rendering error");
         canvas.present();
     };
 
@@ -69,6 +74,8 @@ fn main() -> Result<(), String> {
             _ => {}
         }
     }
+
+    // std::thread::sleep(std::time::Duration::from_millis(100));
 
     Ok(())
 }
