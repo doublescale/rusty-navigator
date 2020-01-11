@@ -35,14 +35,18 @@ impl<T> V2<T> {
     fn new(x: T, y: T) -> Self {
         V2 { x, y }
     }
+}
 
-    fn add(self: V2<T>, o: &V2<T>) -> V2<<T as std::ops::Add>::Output>
-    where
-        T: std::ops::Add + Copy,
-    {
+impl<T> std::ops::Add<&V2<T>> for V2<T>
+where
+    T: std::ops::Add + Copy,
+{
+    type Output = V2<<T as std::ops::Add>::Output>;
+
+    fn add(self, other: &Self) -> V2<<T as std::ops::Add>::Output> {
         V2 {
-            x: self.x + o.x,
-            y: self.y + o.y,
+            x: self.x + other.x,
+            y: self.y + other.y,
         }
     }
 }
@@ -149,7 +153,7 @@ fn main() -> Result<(), String> {
             }
         }
 
-        state.heli_pos = state.heli_pos.add(&state.heli_vel);
+        state.heli_pos = state.heli_pos + &state.heli_vel;
         state.heli_vel.y -= 0.0002;
 
         std::thread::sleep(std::time::Duration::from_millis(20));
