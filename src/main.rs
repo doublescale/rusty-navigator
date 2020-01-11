@@ -2,6 +2,7 @@ use rand::SeedableRng;
 use sdl2::event::Event;
 use sdl2::image::LoadTexture;
 use sdl2::keyboard::Keycode;
+use sdl2::keyboard::Scancode;
 use sdl2::pixels::Color;
 use sdl2::rect::Point;
 use sdl2::rect::Rect;
@@ -67,7 +68,7 @@ where
 
     AppState {
         heli_pos: V2::new(0.1, 0.5),
-        heli_vel: V2::new(0.0, 0.0),
+        heli_vel: V2::new(0.001, 0.0),
         walls,
     }
 }
@@ -154,7 +155,13 @@ fn main() -> Result<(), String> {
         }
 
         state.heli_pos = state.heli_pos + &state.heli_vel;
-        state.heli_vel.y -= 0.0002;
+
+        let keystate = event_pump.keyboard_state();
+        if keystate.is_scancode_pressed(Scancode::Up) {
+            state.heli_vel.y += 0.0001;
+        } else {
+            state.heli_vel.y -= 0.0001;
+        }
 
         std::thread::sleep(std::time::Duration::from_millis(20));
     }
