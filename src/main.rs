@@ -36,13 +36,13 @@ impl<T> V2<T> {
         V2 { x, y }
     }
 
-    fn add<U>(s: &V2<U>, o: &V2<U>) -> V2<<U as std::ops::Add>::Output>
+    fn add(self: V2<T>, o: &V2<T>) -> V2<<T as std::ops::Add>::Output>
     where
-        U: std::ops::Add + Copy,
+        T: std::ops::Add + Copy,
     {
         V2 {
-            x: s.x + o.x,
-            y: s.y + o.y,
+            x: self.x + o.x,
+            y: self.y + o.y,
         }
     }
 }
@@ -149,7 +149,7 @@ fn main() -> Result<(), String> {
             }
         }
 
-        state.heli_pos = V2::<f32>::add(&state.heli_pos, &state.heli_vel);
+        state.heli_pos = state.heli_pos.add(&state.heli_vel);
         state.heli_vel.y -= 0.0002;
 
         std::thread::sleep(std::time::Duration::from_millis(20));
