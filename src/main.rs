@@ -1,7 +1,5 @@
-use rand::Rng;
 use rand::SeedableRng;
 use sdl2::event::Event;
-use sdl2::event::WindowEvent;
 use sdl2::image::LoadTexture;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
@@ -37,10 +35,21 @@ impl<T> V2<T> {
     fn new(x: T, y: T) -> Self {
         V2 { x, y }
     }
+
+    fn add<U>(s: &V2<U>, o: &V2<U>) -> V2<<U as std::ops::Add>::Output>
+    where
+        U: std::ops::Add + Copy,
+    {
+        V2 {
+            x: s.x + o.x,
+            y: s.y + o.y,
+        }
+    }
 }
 
 struct AppState {
     heli_pos: V2<f64>,
+    heli_vel: V2<f64>,
     walls: Vec<V2<f64>>,
 }
 
@@ -54,6 +63,7 @@ where
 
     AppState {
         heli_pos: V2::new(0.1, 0.5),
+        heli_vel: V2::new(0.0, 0.0),
         walls,
     }
 }
@@ -87,14 +97,14 @@ fn main() -> Result<(), String> {
     };
 
     let mut rng = rand::rngs::StdRng::seed_from_u64(0);
-    let state = init_app_state(&mut rng);
+    let mut state = init_app_state(&mut rng);
     let points: Vec<Point> = state
         .walls
         .iter()
         .map(|V2 { x, y }| Point::new((x * 1024.0) as i32, ((1.0 - y) * 640.0) as i32))
         .collect();
 
-    let mut render = || {
+    let mut render = |state: &AppState| {
         if opts.debug {
             println!("Rendering");
         }
@@ -120,28 +130,30 @@ fn main() -> Result<(), String> {
         canvas.present();
     };
 
-    for ev in event_pump.wait_iter() {
-        if opts.debug {
-            println!("{:?}", ev);
-        }
+    'running: loop {
+        render(&state);
 
-        match ev {
-            Event::KeyDown {
-                keycode: Some(Keycode::Escape),
-                ..
+        for ev in event_pump.poll_iter() {
+            if opts.debug {
+                println!("{:?}", ev);
             }
-            | Event::Quit { .. } => break,
 
-            Event::Window {
-                win_event: WindowEvent::Exposed,
-                ..
-            } => render(),
+            match ev {
+                Event::KeyDown {
+                    keycode: Some(Keycode::Escape),
+                    ..
+                }
+                | Event::Quit { .. } => break 'running,
 
-            _ => {}
+                _ => {}
+            }
         }
-    }
 
-    // std::thread::sleep(std::time::Duration::from_millis(100));
+        state.heli_pos = V2::<f32>::add(&state.heli_pos, &state.heli_vel);
+        state.heli_vel.y -= 0.0002;
+
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    }
 
     Ok(())
 }
