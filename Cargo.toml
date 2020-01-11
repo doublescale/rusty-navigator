@@ -1,0 +1,8 @@
+[package]
+name = "rusty-navigator"
+version = "0.1.0"
+authors = ["doublescale <doublescale@tutanota.com>"]
+edition = "2018"
+
+[dependencies]
+sdl2 = "0.32"
