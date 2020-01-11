@@ -45,15 +45,20 @@ fn main() -> Result<(), String> {
         .present_vsync()
         .build()
         .map_err(|e| e.to_string())?;
-    let texture_creator = canvas.texture_creator();
-    let texture = texture_creator.load_texture("data/heli.png")?;
     canvas
         .set_logical_size(1024, 640)
         .expect("Unable to set logical size");
+    let texture_creator = canvas.texture_creator();
+    let texture = {
+        let mut t = texture_creator.load_texture("data/heli.png")?;
+        // t.set_color_mod(0, 255, 0);
+        t.set_blend_mode(sdl2::render::BlendMode::Add);
+        t
+    };
 
     let mut rng = rand::rngs::StdRng::seed_from_u64(0);
     let points: Vec<Point> = (0..)
-        .map(|i| Point::new(i * 128, rng.gen_range(200, 300)))
+        .map(|i| Point::new(i * 128, rng.gen_range(400, 500)))
         .take_while(|p| p.x <= 1024)
         .collect();
 
@@ -68,7 +73,7 @@ fn main() -> Result<(), String> {
         canvas.draw_lines(&points[..]).expect("Rendering error");
 
         canvas
-            .copy(&texture, None, Some(Rect::new(10, 10, 64, 64)))
+            .copy(&texture, None, Some(Rect::new(10, 200, 64, 24)))
             .expect("Rendering error");
 
         canvas.present();
