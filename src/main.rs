@@ -28,6 +28,36 @@ fn get_app_options() -> AppOptions {
     AppOptions { debug: have("-d") }
 }
 
+struct V2<T> {
+    x: T,
+    y: T,
+}
+
+impl<T> V2<T> {
+    fn new(x: T, y: T) -> Self {
+        V2 { x, y }
+    }
+}
+
+struct AppState {
+    heli_pos: V2<f64>,
+    walls: Vec<V2<f64>>,
+}
+
+fn init_app_state<T>(rng: &mut T) -> AppState
+where
+    T: rand::Rng,
+{
+    let walls: Vec<_> = (0..=5)
+        .map(|i| V2::new(i as f64 / 5.0, rng.gen_range(0.1, 0.4)))
+        .collect();
+
+    AppState {
+        heli_pos: V2::new(0.1, 0.5),
+        walls,
+    }
+}
+
 fn main() -> Result<(), String> {
     let opts = get_app_options();
 
@@ -57,9 +87,11 @@ fn main() -> Result<(), String> {
     };
 
     let mut rng = rand::rngs::StdRng::seed_from_u64(0);
-    let points: Vec<Point> = (0..)
-        .map(|i| Point::new(i * 128, rng.gen_range(400, 500)))
-        .take_while(|p| p.x <= 1024)
+    let state = init_app_state(&mut rng);
+    let points: Vec<Point> = state
+        .walls
+        .iter()
+        .map(|V2 { x, y }| Point::new((x * 1024.0) as i32, ((1.0 - y) * 640.0) as i32))
         .collect();
 
     let mut render = || {
@@ -73,7 +105,16 @@ fn main() -> Result<(), String> {
         canvas.draw_lines(&points[..]).expect("Rendering error");
 
         canvas
-            .copy(&texture, None, Some(Rect::new(10, 200, 64, 24)))
+            .copy(
+                &texture,
+                None,
+                Some(Rect::new(
+                    (state.heli_pos.x * 1024.0) as i32,
+                    ((1.0 - state.heli_pos.y) * 640.0) as i32,
+                    64,
+                    24,
+                )),
+            )
             .expect("Rendering error");
 
         canvas.present();
