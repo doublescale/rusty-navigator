@@ -157,7 +157,9 @@ fn main() -> Result<(), String> {
         state.heli_pos = state.heli_pos + &state.heli_vel;
 
         let keystate = event_pump.keyboard_state();
-        if keystate.is_scancode_pressed(Scancode::Up) {
+        if keystate.is_scancode_pressed(Scancode::Up)
+            || keystate.is_scancode_pressed(Scancode::Space)
+        {
             state.heli_vel.y += 0.0001;
         } else {
             state.heli_vel.y -= 0.0001;
