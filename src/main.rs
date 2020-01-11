@@ -1,3 +1,5 @@
+use rand::Rng;
+use rand::SeedableRng;
 use sdl2::event::Event;
 use sdl2::event::WindowEvent;
 use sdl2::keyboard::Keycode;
@@ -45,19 +47,27 @@ fn main() -> Result<(), String> {
         .set_logical_size(800, 600)
         .expect("Unable to set logical size");
 
+    let mut rng = rand::rngs::StdRng::seed_from_u64(0);
+    let points: Vec<Point> = (0..)
+        .map(|i| Point::new(i * 80, rng.gen_range(200, 300)))
+        .take_while(|p| p.x <= 800)
+        .collect();
+
     let mut render = || {
         if opts.debug {
             println!("Rendering");
         }
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
+
+        canvas.set_draw_color(Color::RGB(255, 255, 255));
+        canvas.draw_lines(&points[..]).expect("Rendering error");
+
         canvas.set_draw_color(Color::RGB(128, 128, 128));
         canvas
             .fill_rect(Rect::new(10, 20, 30, 40))
             .expect("Rendering error");
-        canvas.set_draw_color(Color::RGB(255, 255, 255));
-        let points = [Point::new(10, 90), Point::new(50, 70), Point::new(90, 160)];
-        canvas.draw_lines(&points[..]).expect("Rendering error");
+
         canvas.present();
     };
 
