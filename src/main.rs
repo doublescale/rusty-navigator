@@ -2,6 +2,7 @@ use rand::Rng;
 use rand::SeedableRng;
 use sdl2::event::Event;
 use sdl2::event::WindowEvent;
+use sdl2::image::LoadTexture;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::rect::Point;
@@ -33,8 +34,9 @@ fn main() -> Result<(), String> {
     let sdl_context = sdl2::init()?;
     let mut event_pump = sdl_context.event_pump()?;
     let video_subsystem = sdl_context.video()?;
+    let _image_context = sdl2::image::init(sdl2::image::InitFlag::PNG)?;
     let window = video_subsystem
-        .window("Rusty Navigator", 800, 600)
+        .window("Rusty Navigator", 1024, 640)
         .resizable()
         .build()
         .map_err(|e| e.to_string())?;
@@ -43,14 +45,16 @@ fn main() -> Result<(), String> {
         .present_vsync()
         .build()
         .map_err(|e| e.to_string())?;
+    let texture_creator = canvas.texture_creator();
+    let texture = texture_creator.load_texture("data/heli.png")?;
     canvas
-        .set_logical_size(800, 600)
+        .set_logical_size(1024, 640)
         .expect("Unable to set logical size");
 
     let mut rng = rand::rngs::StdRng::seed_from_u64(0);
     let points: Vec<Point> = (0..)
-        .map(|i| Point::new(i * 80, rng.gen_range(200, 300)))
-        .take_while(|p| p.x <= 800)
+        .map(|i| Point::new(i * 128, rng.gen_range(200, 300)))
+        .take_while(|p| p.x <= 1024)
         .collect();
 
     let mut render = || {
@@ -63,9 +67,8 @@ fn main() -> Result<(), String> {
         canvas.set_draw_color(Color::RGB(255, 255, 255));
         canvas.draw_lines(&points[..]).expect("Rendering error");
 
-        canvas.set_draw_color(Color::RGB(128, 128, 128));
         canvas
-            .fill_rect(Rect::new(10, 20, 30, 40))
+            .copy(&texture, None, Some(Rect::new(10, 10, 64, 64)))
             .expect("Rendering error");
 
         canvas.present();

@@ -7,6 +7,6 @@ stdenv.mkDerivation {
     rustup
   ];
   buildInputs = [
-    SDL2
+    SDL2 SDL2_image
   ];
 }
