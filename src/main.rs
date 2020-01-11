@@ -2,6 +2,7 @@ use sdl2::event::Event;
 use sdl2::event::WindowEvent;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
+use sdl2::rect::Point;
 use sdl2::rect::Rect;
 
 #[derive(Debug)]
@@ -40,6 +41,9 @@ fn main() -> Result<(), String> {
         .present_vsync()
         .build()
         .map_err(|e| e.to_string())?;
+    canvas
+        .set_logical_size(800, 600)
+        .expect("Unable to set logical size");
 
     let mut render = || {
         if opts.debug {
@@ -51,6 +55,9 @@ fn main() -> Result<(), String> {
         canvas
             .fill_rect(Rect::new(10, 20, 30, 40))
             .expect("Rendering error");
+        canvas.set_draw_color(Color::RGB(255, 255, 255));
+        let points = [Point::new(10, 90), Point::new(50, 70), Point::new(90, 160)];
+        canvas.draw_lines(&points[..]).expect("Rendering error");
         canvas.present();
     };
 
