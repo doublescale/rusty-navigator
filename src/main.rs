@@ -6,6 +6,7 @@ use sdl2::keyboard::Scancode;
 use sdl2::pixels::Color;
 use sdl2::rect::Point;
 use sdl2::rect::Rect;
+use std::collections::VecDeque;
 
 #[derive(Debug)]
 struct AppOptions {
@@ -87,14 +88,11 @@ struct AppState {
     collided: bool,
     heli_pos: V2<f64>,
     heli_vel: V2<f64>,
-    tube: Vec<(V2<f64>, f64)>,
+    tube: VecDeque<(V2<f64>, f64)>,
 }
 
-fn init_app_state<T>(rng: &mut T) -> AppState
-where
-    T: rand::Rng,
-{
-    let tube: Vec<_> = (0..=5)
+fn init_app_state(rng: &mut impl rand::Rng) -> AppState {
+    let tube: VecDeque<_> = (0..=5)
         .map(|i| {
             (
                 V2::new(i as f64 / 5.0, rng.gen_range(0.2, 0.8)),
@@ -106,7 +104,7 @@ where
     AppState {
         collided: false,
         heli_pos: V2::new(0.1, 0.5),
-        heli_vel: V2::new(0.001, 0.0),
+        heli_vel: V2::new(0.0, 0.0),
         tube,
     }
 }
@@ -240,6 +238,8 @@ fn main() -> Result<(), String> {
                 state.heli_vel.y -= 0.0001;
             }
 
+            move_tube(&mut rng, &mut state);
+
             state.collided = is_collided(&state);
         }
 
@@ -247,6 +247,28 @@ fn main() -> Result<(), String> {
     }
 
     Ok(())
+}
+
+fn move_tube(rng: &mut impl rand::Rng, state: &mut AppState) {
+    let tube = &mut state.tube;
+
+    for (p, _) in tube.iter_mut() {
+        p.x -= 0.001;
+    }
+
+    while tube.get(1).filter(|(p, _)| p.x < 0.0).is_some() {
+        tube.pop_front();
+        println!("Pop! Remaining: {}", tube.len());
+    }
+
+    while tube.back().filter(|(p, _)| p.x >= 1.0).is_none() {
+        let new_x = tube.back().map_or(0.0, |(p, _)| p.x + 1.0 / 5.0);
+        tube.push_back((
+            V2::new(new_x, rng.gen_range(0.2, 0.8)),
+            rng.gen_range(0.1, 0.2),
+        ));
+        println!("Push! Remaining: {}", tube.len());
+    }
 }
 
 fn segment_point_distance((seg_start, seg_end): (V2<f64>, V2<f64>), point: V2<f64>) -> f64 {
