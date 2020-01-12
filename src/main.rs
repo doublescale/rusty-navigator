@@ -53,6 +53,7 @@ where
 }
 
 struct AppState {
+    collided: bool,
     heli_pos: V2<f64>,
     heli_vel: V2<f64>,
     walls: Vec<V2<f64>>,
@@ -67,6 +68,7 @@ where
         .collect();
 
     AppState {
+        collided: false,
         heli_pos: V2::new(0.1, 0.5),
         heli_vel: V2::new(0.001, 0.0),
         walls,
@@ -94,9 +96,14 @@ fn main() -> Result<(), String> {
         .set_logical_size(1024, 640)
         .expect("Unable to set logical size");
     let texture_creator = canvas.texture_creator();
-    let texture = {
+    let tex_heli = {
         let mut t = texture_creator.load_texture("data/heli.png")?;
         // t.set_color_mod(0, 255, 0);
+        t.set_blend_mode(sdl2::render::BlendMode::Add);
+        t
+    };
+    let tex_explosion = {
+        let mut t = texture_creator.load_texture("data/explosion.png")?;
         t.set_blend_mode(sdl2::render::BlendMode::Add);
         t
     };
@@ -119,9 +126,20 @@ fn main() -> Result<(), String> {
         canvas.set_draw_color(Color::RGB(255, 255, 255));
         canvas.draw_lines(&points[..]).expect("Rendering error");
 
-        canvas
-            .copy(
-                &texture,
+        if state.collided {
+            canvas.copy(
+                &tex_explosion,
+                None,
+                Some(Rect::new(
+                    (state.heli_pos.x * 1024.0) as i32,
+                    ((1.0 - state.heli_pos.y) * 640.0) as i32,
+                    64,
+                    64,
+                )),
+            )
+        } else {
+            canvas.copy(
+                &tex_heli,
                 None,
                 Some(Rect::new(
                     (state.heli_pos.x * 1024.0) as i32,
@@ -130,7 +148,8 @@ fn main() -> Result<(), String> {
                     24,
                 )),
             )
-            .expect("Rendering error");
+        }
+        .expect("Rendering error");
 
         canvas.present();
     };
@@ -154,15 +173,17 @@ fn main() -> Result<(), String> {
             }
         }
 
-        state.heli_pos = state.heli_pos + &state.heli_vel;
+        if !state.collided {
+            state.heli_pos = state.heli_pos + &state.heli_vel;
 
-        let keystate = event_pump.keyboard_state();
-        if keystate.is_scancode_pressed(Scancode::Up)
-            || keystate.is_scancode_pressed(Scancode::Space)
-        {
-            state.heli_vel.y += 0.0001;
-        } else {
-            state.heli_vel.y -= 0.0001;
+            let keystate = event_pump.keyboard_state();
+            if keystate.is_scancode_pressed(Scancode::Up)
+                || keystate.is_scancode_pressed(Scancode::Space)
+            {
+                state.heli_vel.y += 0.0001;
+            } else {
+                state.heli_vel.y -= 0.0001;
+            }
         }
 
         std::thread::sleep(std::time::Duration::from_millis(20));
