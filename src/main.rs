@@ -112,12 +112,12 @@ where
 }
 
 impl AppState {
-    fn ground<'a>(&'a self) -> Box<dyn Iterator<Item = V2<f64>> + 'a> {
-        Box::new(self.tube.iter().map(|&(p, r)| p + V2::new(0.0, -r)))
+    fn ground<'a>(&'a self) -> impl Iterator<Item = V2<f64>> + 'a {
+        self.tube.iter().map(|&(p, r)| p + V2::new(0.0, -r))
     }
 
-    fn ceiling<'a>(&'a self) -> Box<dyn Iterator<Item = V2<f64>> + 'a> {
-        Box::new(self.tube.iter().map(|&(p, r)| p + V2::new(0.0, r)))
+    fn ceiling(&self) -> impl Iterator<Item = V2<f64>> + '_ {
+        self.tube.iter().map(|&(p, r)| p + V2::new(0.0, r))
     }
 }
 
