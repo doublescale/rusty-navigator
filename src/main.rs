@@ -241,6 +241,8 @@ fn main() -> Result<(), String> {
         }
 
         if !state.collided && !state.paused {
+            sdl_context.mouse().show_cursor(false);
+
             state.heli_pos = state.heli_pos + state.heli_vel;
 
             if input_up {
@@ -252,6 +254,8 @@ fn main() -> Result<(), String> {
             move_tube(&mut state);
 
             state.collided = is_collided(&state);
+        } else {
+            sdl_context.mouse().show_cursor(true);
         }
 
         std::thread::sleep(std::time::Duration::from_millis(20));
