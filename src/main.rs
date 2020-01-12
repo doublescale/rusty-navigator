@@ -116,7 +116,7 @@ fn init_app_state(rng: StdRng) -> AppState {
 }
 
 impl AppState {
-    fn ground<'a>(&'a self) -> impl Iterator<Item = V2<f64>> + 'a {
+    fn ground(&self) -> impl Iterator<Item = V2<f64>> + '_ {
         self.tube.iter().map(|&(p, r)| p + V2::new(0.0, -r))
     }
 
