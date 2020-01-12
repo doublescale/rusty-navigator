@@ -252,7 +252,7 @@ fn main() -> Result<(), String> {
                 state.heli_vel.y -= 0.0001;
             }
 
-            move_tube(&mut state);
+            move_tube(opts.debug, &mut state);
 
             state.collided = is_collided(&state);
         }
@@ -263,7 +263,7 @@ fn main() -> Result<(), String> {
     Ok(())
 }
 
-fn move_tube(state: &mut AppState) {
+fn move_tube(debug: bool, state: &mut AppState) {
     let rng = &mut state.rng;
     let tube = &mut state.tube;
 
@@ -273,7 +273,9 @@ fn move_tube(state: &mut AppState) {
 
     while tube.get(1).filter(|(p, _)| p.x < 0.0).is_some() {
         tube.pop_front();
-        println!("Pop! Remaining: {}", tube.len());
+        if debug {
+            println!("Pop! Remaining: {}", tube.len());
+        }
     }
 
     while tube.back().filter(|(p, _)| p.x >= 1.0).is_none() {
@@ -282,7 +284,9 @@ fn move_tube(state: &mut AppState) {
             V2::new(new_x, rng.gen_range(0.2, 0.8)),
             rng.gen_range(0.1, 0.2),
         ));
-        println!("Push! Remaining: {}", tube.len());
+        if debug {
+            println!("Push! Remaining: {}", tube.len());
+        }
     }
 }
 
