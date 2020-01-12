@@ -1,3 +1,5 @@
+use rand::rngs::StdRng;
+use rand::Rng;
 use rand::SeedableRng;
 use sdl2::event::Event;
 use sdl2::image::LoadTexture;
@@ -85,13 +87,14 @@ impl std::ops::Sub for V2<f64> {
 }
 
 struct AppState {
+    rng: StdRng,
     collided: bool,
     heli_pos: V2<f64>,
     heli_vel: V2<f64>,
     tube: VecDeque<(V2<f64>, f64)>,
 }
 
-fn init_app_state(rng: &mut impl rand::Rng) -> AppState {
+fn init_app_state(mut rng: StdRng) -> AppState {
     let tube: VecDeque<_> = (0..=5)
         .map(|i| {
             (
@@ -102,6 +105,7 @@ fn init_app_state(rng: &mut impl rand::Rng) -> AppState {
         .collect();
 
     AppState {
+        rng,
         collided: false,
         heli_pos: V2::new(0.1, 0.5),
         heli_vel: V2::new(0.0, 0.0),
@@ -152,13 +156,9 @@ fn main() -> Result<(), String> {
         t
     };
 
-    let mut rng = rand::rngs::StdRng::seed_from_u64(0);
-    let mut state = init_app_state(&mut rng);
+    let mut state = init_app_state(StdRng::seed_from_u64(0));
 
     let mut render = |state: &AppState| {
-        if opts.debug {
-            println!("Rendering");
-        }
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
 
@@ -220,7 +220,7 @@ fn main() -> Result<(), String> {
                 Event::KeyDown {
                     keycode: Some(Keycode::R),
                     ..
-                } => state = init_app_state(&mut rng),
+                } => state = init_app_state(state.rng),
 
                 _ => {}
             }
@@ -238,7 +238,7 @@ fn main() -> Result<(), String> {
                 state.heli_vel.y -= 0.0001;
             }
 
-            move_tube(&mut rng, &mut state);
+            move_tube(&mut state);
 
             state.collided = is_collided(&state);
         }
@@ -249,7 +249,8 @@ fn main() -> Result<(), String> {
     Ok(())
 }
 
-fn move_tube(rng: &mut impl rand::Rng, state: &mut AppState) {
+fn move_tube(state: &mut AppState) {
+    let rng = &mut state.rng;
     let tube = &mut state.tube;
 
     for (p, _) in tube.iter_mut() {
