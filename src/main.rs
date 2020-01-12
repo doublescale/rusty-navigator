@@ -27,6 +27,7 @@ fn get_app_options() -> AppOptions {
     AppOptions { debug: have("-d") }
 }
 
+#[derive(Clone, Copy)]
 struct V2<T> {
     x: T,
     y: T,
@@ -35,6 +36,35 @@ struct V2<T> {
 impl<T> V2<T> {
     fn new(x: T, y: T) -> Self {
         V2 { x, y }
+    }
+}
+
+impl V2<f64> {
+    fn normalized(self) -> Self {
+        let V2 { x, y } = self;
+        let norm = x * x + y * y;
+        V2 {
+            x: x / norm,
+            y: y / norm,
+        }
+    }
+
+    fn turn_left(self) -> Self {
+        V2 {
+            x: -self.y,
+            y: self.x,
+        }
+    }
+
+    fn turn_right(self) -> Self {
+        V2 {
+            x: self.y,
+            y: -self.x,
+        }
+    }
+
+    fn dot(self, other: Self) -> f64 {
+        self.x * other.x + self.y * other.y
     }
 }
 
@@ -48,6 +78,17 @@ where
         V2 {
             x: self.x + other.x,
             y: self.y + other.y,
+        }
+    }
+}
+
+impl std::ops::Sub for V2<f64> {
+    type Output = V2<f64>;
+
+    fn sub(self, other: Self) -> Self {
+        Self {
+            x: self.x - other.x,
+            y: self.y - other.y,
         }
     }
 }
@@ -184,10 +225,34 @@ fn main() -> Result<(), String> {
             } else {
                 state.heli_vel.y -= 0.0001;
             }
+
+            state.collided = is_collided(&state);
         }
 
         std::thread::sleep(std::time::Duration::from_millis(20));
     }
 
     Ok(())
+}
+
+fn segment_point_distance((seg_start, seg_end): (V2<f64>, V2<f64>), point: V2<f64>) -> f64 {
+    (seg_end - seg_start)
+        .turn_left()
+        .normalized()
+        .dot(point - seg_start)
+}
+
+fn is_collided(state: &AppState) -> bool {
+    fn between((start, end): (f64, f64), x: f64) -> bool {
+        x >= start && x <= end
+    }
+
+    state
+        .walls
+        .iter()
+        .zip(state.walls.iter().skip(1))
+        .any(|(start, end)| {
+            between((start.x, end.x), state.heli_pos.x)
+                && segment_point_distance((*start, *end), state.heli_pos) < 0.0
+        })
 }
