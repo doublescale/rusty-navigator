@@ -112,18 +112,12 @@ where
 }
 
 impl AppState {
-    fn ground(&self) -> Vec<V2<f64>> {
-        self.tube
-            .iter()
-            .map(|(p, r)| *p + V2::new(0.0, -*r))
-            .collect()
+    fn ground<'a>(&'a self) -> Box<dyn Iterator<Item = V2<f64>> + 'a> {
+        Box::new(self.tube.iter().map(|&(p, r)| p + V2::new(0.0, -r)))
     }
 
-    fn ceiling(&self) -> Vec<V2<f64>> {
-        self.tube
-            .iter()
-            .map(|(p, r)| *p + V2::new(0.0, *r))
-            .collect()
+    fn ceiling<'a>(&'a self) -> Box<dyn Iterator<Item = V2<f64>> + 'a> {
+        Box::new(self.tube.iter().map(|&(p, r)| p + V2::new(0.0, r)))
     }
 }
 
@@ -173,13 +167,11 @@ fn main() -> Result<(), String> {
         canvas.set_draw_color(Color::RGB(255, 255, 255));
         let points: Vec<Point> = state
             .ground()
-            .iter()
             .map(|V2 { x, y }| Point::new((x * 1024.0) as i32, ((1.0 - y) * 640.0) as i32))
             .collect();
         canvas.draw_lines(&points[..]).expect("Rendering error");
         let points: Vec<Point> = state
             .ceiling()
-            .iter()
             .map(|V2 { x, y }| Point::new((x * 1024.0) as i32, ((1.0 - y) * 640.0) as i32))
             .collect();
         canvas.draw_lines(&points[..]).expect("Rendering error");
@@ -288,21 +280,19 @@ fn is_collided(state: &AppState) -> bool {
     let pos = state.heli_pos;
     let hit_ground = state
         .ground()
-        .iter()
-        .zip(state.ground().iter().skip(1))
+        .zip(state.ground().skip(1))
         .any(|(start, end)| {
             between((start.x, end.x), pos.x)
                 && pos.y - HELI_RADIUS < max(start.y, end.y)
-                && segment_point_distance((*start, *end), pos) < HELI_RADIUS
+                && segment_point_distance((start, end), pos) < HELI_RADIUS
         });
     let hit_ceiling = state
         .ceiling()
-        .iter()
-        .zip(state.ceiling().iter().skip(1))
+        .zip(state.ceiling().skip(1))
         .any(|(start, end)| {
             between((start.x, end.x), pos.x)
                 && pos.y + HELI_RADIUS > min(start.y, end.y)
-                && segment_point_distance((*end, *start), pos) < HELI_RADIUS
+                && segment_point_distance((end, start), pos) < HELI_RADIUS
         });
 
     hit_ground || hit_ceiling
