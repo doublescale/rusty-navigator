@@ -265,26 +265,44 @@ fn segment_point_distance((seg_start, seg_end): (V2<f64>, V2<f64>), point: V2<f6
 }
 
 fn is_collided(state: &AppState) -> bool {
+    const HELI_RADIUS: f64 = 0.03;
     fn between((start, end): (f64, f64), x: f64) -> bool {
         x > start && x < end
     }
-    const HELI_RADIUS: f64 = 0.05;
+    fn max(x: f64, y: f64) -> f64 {
+        if x > y {
+            x
+        } else {
+            y
+        }
+    }
+    fn min(x: f64, y: f64) -> f64 {
+        if x < y {
+            x
+        } else {
+            y
+        }
+    }
 
+    // TODO: Do proper circle-polygon intersection
+    let pos = state.heli_pos;
     let hit_ground = state
         .ground()
         .iter()
         .zip(state.ground().iter().skip(1))
         .any(|(start, end)| {
-            between((start.x, end.x), state.heli_pos.x)
-                && segment_point_distance((*start, *end), state.heli_pos) < HELI_RADIUS
+            between((start.x, end.x), pos.x)
+                && pos.y - HELI_RADIUS < max(start.y, end.y)
+                && segment_point_distance((*start, *end), pos) < HELI_RADIUS
         });
     let hit_ceiling = state
         .ceiling()
         .iter()
         .zip(state.ceiling().iter().skip(1))
         .any(|(start, end)| {
-            between((start.x, end.x), state.heli_pos.x)
-                && segment_point_distance((*end, *start), state.heli_pos) < HELI_RADIUS
+            between((start.x, end.x), pos.x)
+                && pos.y + HELI_RADIUS > min(start.y, end.y)
+                && segment_point_distance((*end, *start), pos) < HELI_RADIUS
         });
 
     hit_ground || hit_ceiling
