@@ -265,7 +265,7 @@ fn move_tube(state: &mut AppState) {
     let tube = &mut state.tube;
 
     for (p, _) in tube.iter_mut() {
-        p.x -= 0.001;
+        p.x -= 0.002;
     }
 
     while tube.get(1).filter(|(p, _)| p.x < 0.0).is_some() {
