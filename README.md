@@ -12,6 +12,9 @@ cargo run
 
 ## Controls
 Fly up: Spacebar or Up arrow
+
 Toggle pause: P
+
 Restart: R
+
 Quit: Escape
