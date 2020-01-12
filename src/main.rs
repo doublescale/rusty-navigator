@@ -93,6 +93,7 @@ struct AppState {
     heli_pos: V2<f64>,
     heli_vel: V2<f64>,
     tube: VecDeque<(V2<f64>, f64)>,
+    frames_survived: u64,
 }
 
 fn init_app_state(rng: StdRng) -> AppState {
@@ -108,6 +109,7 @@ fn init_app_state(rng: StdRng) -> AppState {
         heli_pos: V2::new(0.1, 0.5),
         heli_vel: V2::new(0.0, 0.0),
         tube,
+        frames_survived: 0,
     };
     move_tube(&mut state);
     state
@@ -251,8 +253,8 @@ fn main() -> Result<(), String> {
                 state.heli_vel.y -= 0.0001;
             }
 
+            state.frames_survived += 1;
             move_tube(&mut state);
-
             state.collided = is_collided(&state);
         } else {
             sdl_context.mouse().show_cursor(true);
@@ -267,20 +269,28 @@ fn main() -> Result<(), String> {
 fn move_tube(state: &mut AppState) {
     let rng = &mut state.rng;
     let tube = &mut state.tube;
+    let time = state.frames_survived as f64 / 50.0;
 
+    // let speed = min(0.003, 0.0015 + 0.00005 * time);
+    let speed = 0.0025;
     for (p, _) in tube.iter_mut() {
-        p.x -= 0.002;
+        p.x -= speed;
     }
 
     while tube.get(1).filter(|(p, _)| p.x < 0.0).is_some() {
         tube.pop_front();
     }
 
+    let height_var = min(0.3, 0.1 + 0.005 * time);
+    let width_min = max(0.05, 0.15 - 0.005 * time);
+    let width_max = max(width_min + 0.001, max(0.1, 0.25 - 0.005 * time));
+    // println!("{:.4} {:.4} {:.4}", height_var, width_min, width_max);
     while tube.back().filter(|(p, _)| p.x >= 1.0).is_none() {
+        // TODO: Limit maximum curvature
         let new_x = tube.back().map_or(0.0, |(p, _)| p.x + 1.0 / 5.0);
         tube.push_back((
-            V2::new(new_x, rng.gen_range(0.2, 0.8)),
-            rng.gen_range(0.1, 0.2),
+            V2::new(new_x, rng.gen_range(0.5 - height_var, 0.5 + height_var)),
+            rng.gen_range(width_min, width_max),
         ));
     }
 }
@@ -292,24 +302,26 @@ fn segment_point_distance((seg_start, seg_end): (V2<f64>, V2<f64>), point: V2<f6
         .dot(point - seg_start)
 }
 
+fn max(x: f64, y: f64) -> f64 {
+    if x > y {
+        x
+    } else {
+        y
+    }
+}
+
+fn min(x: f64, y: f64) -> f64 {
+    if x < y {
+        x
+    } else {
+        y
+    }
+}
+
 fn is_collided(state: &AppState) -> bool {
     const HELI_RADIUS: f64 = 0.03;
     fn between((start, end): (f64, f64), x: f64) -> bool {
         x > start && x < end
-    }
-    fn max(x: f64, y: f64) -> f64 {
-        if x > y {
-            x
-        } else {
-            y
-        }
-    }
-    fn min(x: f64, y: f64) -> f64 {
-        if x < y {
-            x
-        } else {
-            y
-        }
     }
 
     // TODO: Do proper circle-polygon intersection
