@@ -137,6 +137,7 @@ fn main() -> Result<(), String> {
         .resizable()
         .build()
         .map_err(|e| e.to_string())?;
+    sdl_context.mouse().show_cursor(false);
     let mut canvas = window
         .into_canvas()
         .present_vsync()
@@ -243,8 +244,6 @@ fn main() -> Result<(), String> {
         }
 
         if !state.collided && !state.paused {
-            sdl_context.mouse().show_cursor(false);
-
             state.heli_pos = state.heli_pos + state.heli_vel;
 
             if input_up {
@@ -256,11 +255,9 @@ fn main() -> Result<(), String> {
             state.frames_survived += 1;
             move_tube(&mut state);
             state.collided = is_collided(&state);
-        } else {
-            sdl_context.mouse().show_cursor(true);
         }
 
-        std::thread::sleep(std::time::Duration::from_millis(20));
+        std::thread::sleep(std::time::Duration::from_millis(15));
     }
 
     Ok(())
