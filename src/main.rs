@@ -90,22 +90,28 @@ struct AppState {
     collided: bool,
     heli_pos: V2<f64>,
     heli_vel: V2<f64>,
-    walls: Vec<V2<f64>>,
+    ground: Vec<V2<f64>>,
+    ceiling: Vec<V2<f64>>,
 }
 
 fn init_app_state<T>(rng: &mut T) -> AppState
 where
     T: rand::Rng,
 {
-    let walls: Vec<_> = (0..=5)
+    let ground: Vec<_> = (0..=5)
         .map(|i| V2::new(i as f64 / 5.0, rng.gen_range(0.1, 0.4)))
+        .collect();
+
+    let ceiling: Vec<_> = (0..=5)
+        .map(|i| V2::new(i as f64 / 5.0, rng.gen_range(0.6, 0.9)))
         .collect();
 
     AppState {
         collided: false,
         heli_pos: V2::new(0.1, 0.5),
         heli_vel: V2::new(0.001, 0.0),
-        walls,
+        ground,
+        ceiling,
     }
 }
 
@@ -152,12 +158,18 @@ fn main() -> Result<(), String> {
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
 
+        canvas.set_draw_color(Color::RGB(255, 255, 255));
         let points: Vec<Point> = state
-            .walls
+            .ground
             .iter()
             .map(|V2 { x, y }| Point::new((x * 1024.0) as i32, ((1.0 - y) * 640.0) as i32))
             .collect();
-        canvas.set_draw_color(Color::RGB(255, 255, 255));
+        canvas.draw_lines(&points[..]).expect("Rendering error");
+        let points: Vec<Point> = state
+            .ceiling
+            .iter()
+            .map(|V2 { x, y }| Point::new((x * 1024.0) as i32, ((1.0 - y) * 640.0) as i32))
+            .collect();
         canvas.draw_lines(&points[..]).expect("Rendering error");
 
         if state.collided {
@@ -244,13 +256,24 @@ fn is_collided(state: &AppState) -> bool {
     fn between((start, end): (f64, f64), x: f64) -> bool {
         x >= start && x <= end
     }
+    const HELI_RADIUS: f64 = 0.05;
 
-    state
-        .walls
+    let hit_ground = state
+        .ground
         .iter()
-        .zip(state.walls.iter().skip(1))
+        .zip(state.ground.iter().skip(1))
         .any(|(start, end)| {
             between((start.x, end.x), state.heli_pos.x)
-                && segment_point_distance((*start, *end), state.heli_pos) < 0.05
-        })
+                && segment_point_distance((*start, *end), state.heli_pos) < HELI_RADIUS
+        });
+    let hit_ceiling = state
+        .ceiling
+        .iter()
+        .zip(state.ceiling.iter().skip(1))
+        .any(|(start, end)| {
+            between((start.x, end.x), state.heli_pos.x)
+                && segment_point_distance((*end, *start), state.heli_pos) < HELI_RADIUS
+        });
+
+    hit_ground || hit_ceiling
 }
