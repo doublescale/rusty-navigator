@@ -56,13 +56,6 @@ impl V2<f64> {
         }
     }
 
-    fn turn_right(self) -> Self {
-        V2 {
-            x: self.y,
-            y: -self.x,
-        }
-    }
-
     fn dot(self, other: Self) -> f64 {
         self.x * other.x + self.y * other.y
     }
@@ -151,11 +144,6 @@ fn main() -> Result<(), String> {
 
     let mut rng = rand::rngs::StdRng::seed_from_u64(0);
     let mut state = init_app_state(&mut rng);
-    let points: Vec<Point> = state
-        .walls
-        .iter()
-        .map(|V2 { x, y }| Point::new((x * 1024.0) as i32, ((1.0 - y) * 640.0) as i32))
-        .collect();
 
     let mut render = |state: &AppState| {
         if opts.debug {
@@ -164,6 +152,11 @@ fn main() -> Result<(), String> {
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
 
+        let points: Vec<Point> = state
+            .walls
+            .iter()
+            .map(|V2 { x, y }| Point::new((x * 1024.0) as i32, ((1.0 - y) * 640.0) as i32))
+            .collect();
         canvas.set_draw_color(Color::RGB(255, 255, 255));
         canvas.draw_lines(&points[..]).expect("Rendering error");
 
@@ -172,8 +165,8 @@ fn main() -> Result<(), String> {
                 &tex_explosion,
                 None,
                 Some(Rect::new(
-                    (state.heli_pos.x * 1024.0) as i32,
-                    ((1.0 - state.heli_pos.y) * 640.0) as i32,
+                    (state.heli_pos.x * 1024.0) as i32 - 32,
+                    ((1.0 - state.heli_pos.y) * 640.0) as i32 - 32,
                     64,
                     64,
                 )),
@@ -183,8 +176,8 @@ fn main() -> Result<(), String> {
                 &tex_heli,
                 None,
                 Some(Rect::new(
-                    (state.heli_pos.x * 1024.0) as i32,
-                    ((1.0 - state.heli_pos.y) * 640.0) as i32,
+                    (state.heli_pos.x * 1024.0) as i32 - 32,
+                    ((1.0 - state.heli_pos.y) * 640.0) as i32 - 12,
                     64,
                     24,
                 )),
@@ -209,6 +202,11 @@ fn main() -> Result<(), String> {
                     ..
                 }
                 | Event::Quit { .. } => break 'running,
+
+                Event::KeyDown {
+                    keycode: Some(Keycode::R),
+                    ..
+                } => state = init_app_state(&mut rng),
 
                 _ => {}
             }
@@ -253,6 +251,6 @@ fn is_collided(state: &AppState) -> bool {
         .zip(state.walls.iter().skip(1))
         .any(|(start, end)| {
             between((start.x, end.x), state.heli_pos.x)
-                && segment_point_distance((*start, *end), state.heli_pos) < 0.0
+                && segment_point_distance((*start, *end), state.heli_pos) < 0.05
         })
 }
