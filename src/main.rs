@@ -95,24 +95,22 @@ struct AppState {
     tube: VecDeque<(V2<f64>, f64)>,
 }
 
-fn init_app_state(mut rng: StdRng) -> AppState {
-    let tube: VecDeque<_> = (0..=5)
-        .map(|i| {
-            (
-                V2::new(i as f64 / 5.0, rng.gen_range(0.2, 0.8)),
-                rng.gen_range(0.1, 0.2),
-            )
-        })
+fn init_app_state(rng: StdRng) -> AppState {
+    let tube: VecDeque<_> = [(V2::new(0.0, 0.5), 0.4), (V2::new(0.4, 0.5), 0.4)]
+        .iter()
+        .copied()
         .collect();
 
-    AppState {
+    let mut state = AppState {
         rng,
         paused: true,
         collided: false,
         heli_pos: V2::new(0.1, 0.5),
         heli_vel: V2::new(0.0, 0.0),
         tube,
-    }
+    };
+    move_tube(&mut state);
+    state
 }
 
 impl AppState {
@@ -148,7 +146,6 @@ fn main() -> Result<(), String> {
     let texture_creator = canvas.texture_creator();
     let tex_heli = {
         let mut t = texture_creator.load_texture("data/heli.png")?;
-        // t.set_color_mod(0, 255, 0);
         t.set_blend_mode(sdl2::render::BlendMode::Add);
         t
     };
@@ -252,7 +249,7 @@ fn main() -> Result<(), String> {
                 state.heli_vel.y -= 0.0001;
             }
 
-            move_tube(opts.debug, &mut state);
+            move_tube(&mut state);
 
             state.collided = is_collided(&state);
         }
@@ -263,7 +260,7 @@ fn main() -> Result<(), String> {
     Ok(())
 }
 
-fn move_tube(debug: bool, state: &mut AppState) {
+fn move_tube(state: &mut AppState) {
     let rng = &mut state.rng;
     let tube = &mut state.tube;
 
@@ -273,9 +270,6 @@ fn move_tube(debug: bool, state: &mut AppState) {
 
     while tube.get(1).filter(|(p, _)| p.x < 0.0).is_some() {
         tube.pop_front();
-        if debug {
-            println!("Pop! Remaining: {}", tube.len());
-        }
     }
 
     while tube.back().filter(|(p, _)| p.x >= 1.0).is_none() {
@@ -284,9 +278,6 @@ fn move_tube(debug: bool, state: &mut AppState) {
             V2::new(new_x, rng.gen_range(0.2, 0.8)),
             rng.gen_range(0.1, 0.2),
         ));
-        if debug {
-            println!("Push! Remaining: {}", tube.len());
-        }
     }
 }
 
