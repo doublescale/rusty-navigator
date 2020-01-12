@@ -88,6 +88,7 @@ impl std::ops::Sub for V2<f64> {
 
 struct AppState {
     rng: StdRng,
+    paused: bool,
     collided: bool,
     heli_pos: V2<f64>,
     heli_vel: V2<f64>,
@@ -106,6 +107,7 @@ fn init_app_state(mut rng: StdRng) -> AppState {
 
     AppState {
         rng,
+        paused: true,
         collided: false,
         heli_pos: V2::new(0.1, 0.5),
         heli_vel: V2::new(0.0, 0.0),
@@ -218,7 +220,14 @@ fn main() -> Result<(), String> {
                 | Event::Quit { .. } => break 'running,
 
                 Event::KeyDown {
+                    keycode: Some(Keycode::P),
+                    repeat: false,
+                    ..
+                } => state.paused = !state.paused,
+
+                Event::KeyDown {
                     keycode: Some(Keycode::R),
+                    repeat: false,
                     ..
                 } => state = init_app_state(state.rng),
 
@@ -226,13 +235,18 @@ fn main() -> Result<(), String> {
             }
         }
 
-        if !state.collided {
+        let keystate = event_pump.keyboard_state();
+        let input_up = keystate.is_scancode_pressed(Scancode::Up)
+            || keystate.is_scancode_pressed(Scancode::Space);
+
+        if input_up {
+            state.paused = false;
+        }
+
+        if !state.collided && !state.paused {
             state.heli_pos = state.heli_pos + state.heli_vel;
 
-            let keystate = event_pump.keyboard_state();
-            if keystate.is_scancode_pressed(Scancode::Up)
-                || keystate.is_scancode_pressed(Scancode::Space)
-            {
+            if input_up {
                 state.heli_vel.y += 0.0001;
             } else {
                 state.heli_vel.y -= 0.0001;
